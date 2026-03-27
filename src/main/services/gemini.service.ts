@@ -36,26 +36,40 @@ class AIService {
 			)
 			.join('\n')
 
-		const prompt = `You are an expert lexicographer creating Anki flashcards for ESL students (English as a Second Language).
+		const prompt = `You are an expert lexicographer creating Anki flashcards.
 
-TASK: For EACH word below, generate 1 MAIN meaning only. Follow the part of speech constraint if specified.
+TASK: For EACH word below, generate 1 MAIN meaning. Customize the language based on the input word.
 
 WORDS:
 ${wordsList}
 
 RULES:
-1. **Meaning Limit**: Generate only 1 most common/important meaning per word. Focus on the most frequently used definition.
-2. **Part of Speech Constraint (CRITICAL)**:
-   - If "(verb only)" is specified, generate ONLY verb definitions (1 most common verb meaning).
-   - If "(noun only)" is specified, generate ONLY noun definitions (1 most common noun meaning).
-   - If "(any part of speech)" is specified: first determine the SINGLE most common part of speech for this word, then generate 1 meaning for THAT part of speech only. Do NOT mix different parts of speech.
-3. **Single Part of Speech Per Word**: ALL meanings for a word MUST be the SAME part of speech. Never generate both noun and verb meanings for the same word.
-4. **Simple Vocabulary (Critical)**: Write definitions using ONLY words from the 'Longman Defining Vocabulary' (A1-B1 level). If you must use a harder word, explain it simply.
-5. **COBUILD Style**: Use full sentence definitions (e.g., "If you ______, you move very quickly using your legs.")
-6. **Clarity Check**: The definition must be EASIER to understand than the target word itself.
-7. **Blank in Definition**: In the definition text, ALWAYS replace the target word (and its variations) with "______" (6 underscores). Do NOT show the word in the definition.
-8. **Bold in Examples**: In example sentences, do NOT use blanks. Instead, wrap the target word (or its form) with <b></b> tags.
-9. **Additional Examples**: Provide ${examplesPerMeaning} more examples for the SAME meaning.
+1. **Language Detection & Output Language**:
+   - If the input word is **English**: Generate definitions, examples, and word types in **English**. Use simple vocabulary (A1-B1).
+   - If the input word is **Russian**: Generate definitions, examples, and word types in **Russian**. Use clear, simple Russian.
+   - If the input word is mixed or other: Default to English.
+   - Examples in the definition MUST be in the same language as the definition.
+
+2. **Meaning Limit**: Generate only 1 most common/important meaning per word.
+
+3. **Part of Speech Constraint**:
+   - If "(verb only)" is specified: Generate only verb definitions (or Russian "глагол").
+   - If "(noun only)" is specified: Generate only noun definitions (or Russian "существительное").
+   - If "(any part of speech)" is specified: Pick the most common part of speech.
+   - ALL meanings for a word MUST be the SAME part of speech.
+
+4. **Definition Style (COBUILD)**:
+   - Use full sentence definitions where possible (e.g., "If you ____, you...").
+   - **Blank in Definition**: ALWAYS replace the target word with "______" (6 underscores) in the \`definition\` field ONLY.
+   - **Clarity**: The definition must be easier to understand than the word itself.
+
+5. **Examples (definitionExample and examples)**:
+   - **NO BLANKS**: Do NOT use underscores in \`definitionExample\` or the \`examples\` array.
+   - **BOLD TARGET**: ALWAYS wrap the target word (or its forms) with \`<b>\` tags in both \`definitionExample\` and the \`examples\` array.
+   - Provide ${examplesPerMeaning} additional examples in the \`examples\` array.
+
+6. **Transcription**:
+   - Provide IPA transcription for the word.
 
 Respond with a JSON array where each object represents ONE word with its meanings:
 [
@@ -73,15 +87,15 @@ Respond with a JSON array where each object represents ONE word with its meaning
     ]
   },
   {
-    "word": "book",
+    "word": "книга",
     "meanings": [
       {
-        "wordType": "noun",
-        "definition": "A ______ is a number of pages of text held together in a cover.",
-        "definitionExample": "I'm reading a <b>book</b> about history.",
-        "exampleType": "book",
-        "examples": ["She bought a new <b>book</b>.", "This <b>book</b> is very interesting."],
-        "transcription": "bʊk"
+        "wordType": "существительное",
+        "definition": "______ — это скреплённые вместе листы бумаги с текстом, обычно в переплёте.",
+        "definitionExample": "Я читаю интересную <b>книгу</b> по истории.",
+        "exampleType": "книга",
+        "examples": ["Она купила новую <b>книгу</b>.", "Эта <b>книга</b> очень старая."],
+        "transcription": "ˈknʲiɡə"
       }
     ]
   }
@@ -90,9 +104,8 @@ Respond with a JSON array where each object represents ONE word with its meaning
 IMPORTANT:
 - Process ALL ${parsedWords.length} words
 - Generate ONLY 1 meaning per word (not more!)
-- ALL meanings for one word MUST have the SAME wordType (e.g., all "noun" or all "verb", never mixed)
+- ALL meanings for one word MUST have the SAME wordType
 - Strictly follow part of speech constraints when specified
-- Skip rare or archaic meanings
 - Respond with ONLY the JSON array, no other text`
 
 		try {

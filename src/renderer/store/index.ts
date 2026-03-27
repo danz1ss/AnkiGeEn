@@ -113,7 +113,7 @@ export const useStore = create<AppState>((set, get) => ({
   geminiApiKey: '',
   selectedDeck: '',
   selectedModel: '',
-  exampleCount: 3,
+  exampleCount: 1,
   fieldMapping: {},
   availableDecks: [],
   availableModels: [],
@@ -151,7 +151,7 @@ export const useStore = create<AppState>((set, get) => ({
         geminiApiKey: settings.geminiApiKey || '',
         selectedDeck: settings.selectedDeck || '',
         selectedModel: settings.selectedModel || '',
-        exampleCount: settings.exampleCount || 3,
+        exampleCount: settings.exampleCount || 1,
         fieldMapping: settings.fieldMapping || {}
       });
 
