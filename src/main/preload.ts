@@ -18,6 +18,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke(IPC_CHANNELS.ANKI_STORE_MEDIA, filename, data),
     addNote: (note: any) =>
       ipcRenderer.invoke(IPC_CHANNELS.ANKI_ADD_NOTE, note),
+    addNotes: (notes: any) =>
+      ipcRenderer.invoke(IPC_CHANNELS.ANKI_ADD_NOTES, notes),
+    findNotes: (query: string) =>
+      ipcRenderer.invoke(IPC_CHANNELS.ANKI_FIND_NOTES, query),
     checkConnection: () =>
       ipcRenderer.invoke(IPC_CHANNELS.ANKI_CHECK_CONNECTION)
   },

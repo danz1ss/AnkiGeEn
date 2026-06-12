@@ -1,7 +1,9 @@
 import { IpcMain } from 'electron';
 import { IPC_CHANNELS } from '../../shared/types';
 import { settingsService } from '../services/settings.service';
-import { geminiService } from '../services/gemini.service';
+import { applyAIConfig } from '../services/ai-config';
+
+const AI_KEYS = ['geminiApiKey', 'aiProvider', 'aiModel', 'aiBaseUrl'];
 
 export function setupSettingsHandlers(ipcMain: IpcMain): void {
   ipcMain.handle(IPC_CHANNELS.SETTINGS_GET, async (_, key: string) => {
@@ -17,9 +19,9 @@ export function setupSettingsHandlers(ipcMain: IpcMain): void {
     try {
       await settingsService.set(key as any, value);
 
-      // Update service instances when API keys change
-      if (key === 'geminiApiKey' && value) {
-        geminiService.setApiKey(value);
+      // Re-configure the AI client when any provider-related setting changes
+      if (AI_KEYS.includes(key)) {
+        await applyAIConfig();
       }
     } catch (error: any) {
       console.error('Settings set error:', error);

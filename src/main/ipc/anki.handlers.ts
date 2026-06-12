@@ -56,4 +56,22 @@ export function setupAnkiHandlers(ipcMain: IpcMain): void {
       throw new Error(error.message || 'Failed to add note');
     }
   });
+
+  ipcMain.handle(IPC_CHANNELS.ANKI_ADD_NOTES, async (_, notes: AnkiNote[]) => {
+    try {
+      return await ankiConnectService.addNotes(notes);
+    } catch (error: any) {
+      console.error('AnkiConnect addNotes error:', error);
+      throw new Error(error.message || 'Failed to add notes');
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.ANKI_FIND_NOTES, async (_, query: string) => {
+    try {
+      return await ankiConnectService.findNotes(query);
+    } catch (error: any) {
+      console.error('AnkiConnect findNotes error:', error);
+      return [];
+    }
+  });
 }

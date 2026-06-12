@@ -5,6 +5,9 @@ const mainConfig = {
   mode: process.env.NODE_ENV || 'development',
   entry: './src/main/index.ts',
   target: 'electron-main',
+  externals: {
+    electron: 'commonjs2 electron'
+  },
   output: {
     path: path.resolve(__dirname, 'dist/main'),
     filename: 'index.js'
@@ -31,6 +34,9 @@ const preloadConfig = {
   mode: process.env.NODE_ENV || 'development',
   entry: './src/main/preload.ts',
   target: 'electron-preload',
+  externals: {
+    electron: 'commonjs2 electron'
+  },
   output: {
     path: path.resolve(__dirname, 'dist/main'),
     filename: 'preload.js'

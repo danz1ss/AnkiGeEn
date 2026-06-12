@@ -88,6 +88,14 @@ class AnkiConnectService {
     return await this.invoke('modelFieldNames', { modelName });
   }
 
+  /**
+   * Returns note IDs matching an Anki search query.
+   * Used to detect whether a word already exists in a deck.
+   */
+  async findNotes(query: string): Promise<number[]> {
+    return await this.invoke('findNotes', { query });
+  }
+
   async storeMediaFile(filename: string, data: string): Promise<string> {
     // data should be base64 encoded
     await this.invoke('storeMediaFile', {
@@ -120,20 +128,34 @@ class AnkiConnectService {
     return noteId;
   }
 
-  async addNotes(notes: AnkiNote[]): Promise<number[]> {
-    const noteIds: number[] = [];
-
+  /**
+   * Adds multiple notes in a single AnkiConnect request.
+   * Media files are stored first, then all notes are sent at once.
+   * Returns an array of note IDs; entries are null for notes that
+   * could not be added (e.g. rejected duplicates).
+   */
+  async addNotes(notes: AnkiNote[]): Promise<(number | null)[]> {
+    // Store all media files before adding notes
     for (const note of notes) {
-      try {
-        const noteId = await this.addNote(note);
-        noteIds.push(noteId);
-      } catch (error: any) {
-        console.error(`Failed to add note for word:`, error.message);
-        noteIds.push(-1); // -1 indicates failure
+      if (note.audio && note.audio.length > 0) {
+        for (const audioItem of note.audio) {
+          await this.storeMediaFile(audioItem.filename, audioItem.data);
+        }
       }
     }
 
-    return noteIds;
+    const ankiNotes = notes.map((note) => ({
+      deckName: note.deckName,
+      modelName: note.modelName,
+      fields: note.fields,
+      options: {
+        allowDuplicate: true,
+        duplicateScope: 'deck'
+      },
+      tags: note.tags || []
+    }));
+
+    return await this.invoke('addNotes', { notes: ankiNotes });
   }
 }
 

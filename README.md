@@ -1,251 +1,220 @@
 # AnkiGenerator
 
-A desktop application for automatic Anki flashcard generation using Gemini AI with free audio pronunciation.
+A desktop app that turns a plain list of words into ready-to-study Anki flashcards.
+For each word it generates a definition, transcription (IPA) and example sentences
+with an AI model, adds free audio pronunciation, lets you preview everything, and
+pushes the cards straight into Anki.
+
+Works with **English and Russian** vocabulary out of the box.
+
+---
 
 ## Features
 
-- **Automated Card Generation**: Generate flashcards with translations, transcriptions, examples, and audio pronunciations
-- **Multiple Example Sentences**: Configure the number of example sentences (1-5) per word
-- **Free Audio Pronunciation**: Generate audio pronunciation using Google Translate TTS (no API key required)
-- **Anki Integration**: Direct integration with Anki through AnkiConnect
-- **Field Mapping**: Flexible mapping of generated data to Anki note fields
-- **Batch Processing**: Process multiple words at once with progress tracking
+- **AI card generation** — definition, word type, transcription and example sentences for each word.
+- **Multiple AI providers** — pick a preset (ProxyAPI, OpenAI, OpenRouter, DeepSeek, Gemini) or plug in any OpenAI-compatible endpoint via *Custom*.
+- **Free audio pronunciation** — generated with Google Translate TTS, no extra API key.
+- **Duplicate detection** — words that already exist in the target deck are flagged "Already in deck" and skipped on import (you can still force-add them).
+- **Import from file** — load words from a `.txt` or `.csv` file in one click.
+- **Direct Anki integration** — cards are added through the AnkiConnect add-on.
+- **Flexible field mapping** — map generated data to the fields of any Anki note type.
+- **Batch processing** — process many words at once with a live progress bar.
 
-## Prerequisites
+---
 
-Before using AnkiGenerator, you need:
+## Requirements
 
-1. **Anki** - Install from [https://apps.ankiweb.net](https://apps.ankiweb.net)
-2. **AnkiConnect Add-on** - Install from Anki:
-   - Open Anki
-   - Go to Tools → Add-ons → Get Add-ons
-   - Enter code: `2055492159`
-   - Restart Anki
+Before you start, you need three things:
 
-3. **API Key**:
-   - **Gemini API Key** - Get from [Google AI Studio](https://makersuite.google.com/app/apikey)
+1. **Node.js 18+** — download the LTS version from [nodejs.org](https://nodejs.org).
+   This also installs `npm`, which you'll use to run the app.
 
-## Installation
+2. **Anki + AnkiConnect add-on**
+   - Install Anki from [apps.ankiweb.net](https://apps.ankiweb.net).
+   - Open Anki → **Tools → Add-ons → Get Add-ons…**
+   - Paste the code `2055492159` and click OK.
+   - Restart Anki. (Anki must be **running** whenever you use AnkiGenerator.)
 
-### Development Setup
+3. **An AI provider API key** — one of:
+   | Provider | Where to get a key |
+   |----------|--------------------|
+   | ProxyAPI (default, good for Russia) | https://proxyapi.ru/cabinet/api |
+   | OpenAI | https://platform.openai.com/api-keys |
+   | OpenRouter | https://openrouter.ai/keys |
+   | DeepSeek | https://platform.deepseek.com/api_keys |
+   | Gemini | https://aistudio.google.com/app/apikey |
 
-1. Clone the repository:
+---
+
+## Install & run (step by step)
+
+You don't need to be a developer — just follow these commands in a terminal.
+
+**1. Get the code**
+
 ```bash
 git clone <repository-url>
 cd AnkiGenerator
 ```
 
-2. Install dependencies:
+(Or click **Code → Download ZIP** on GitHub and unzip it, then `cd` into the folder.)
+
+**2. Install dependencies**
+
 ```bash
 npm install
 ```
 
-3. Build the application:
+**3. Build the app**
+
 ```bash
 npm run build
 ```
 
-4. Start the application:
+**4. Start it**
+
 ```bash
 npm start
 ```
 
-### Building for Distribution
+The AnkiGenerator window opens. That's it.
 
-To create a distributable package:
+> Tip: `npm run dev` builds and launches in one step while you experiment.
+
+### Building a standalone app (optional)
+
+To create a distributable build (e.g. a portable Windows executable):
 
 ```bash
 npm run package
 ```
 
-The built application will be in the `release` folder.
+The result appears in the `release/` folder.
 
-## Usage
+---
 
-### 1. Setup Tab
+## How to use it
 
-Configure the application settings:
+The app has four tabs. Go through them left to right.
 
-1. **Anki Connection**
-   - Make sure Anki is running
-   - Click "Refresh" to check the connection status
-   - If disconnected, ensure AnkiConnect addon is installed
+### 1. Setup
 
-2. **API Key**
-   - Enter your Gemini API key
-   - The key is stored securely on your local machine
+- **Anki Connection** — make sure Anki is open, then click **Refresh**. The status should turn green ("Connected"). If not, re-check the AnkiConnect step above.
+- **AI Provider** — choose your provider, pick a model, and paste your API key. For *Custom*, also enter the Base URL of your OpenAI-compatible endpoint.
+- **Anki Settings** — pick the target **Deck**, the **Note Type (model)**, and how many example sentences per word (1–5).
+- **Field Mapping** — match each field of your note type to a data source (Word, Definition, Transcription, Examples, Word Audio, …). The app auto-maps common field names; adjust as needed.
+- Click **Save Settings**.
 
-3. **Anki Settings**
-   - Select a deck from the dropdown
-   - Select a note type (model)
-   - Choose the number of example sentences (1-5)
+### 2. Input
 
-4. **Field Mapping**
-   - Map each field of your selected note type to data sources:
-     - **Word**: The English word
-     - **Translation**: Russian translation
-     - **Transcription**: IPA phonetic transcription
-     - **Examples**: Example sentences in English
-     - **Example Translations**: Example sentences in Russian
-     - **Audio**: Audio pronunciation file
-     - **None**: Leave field empty
+- Type or paste words — one per line, or comma-separated.
+- Or click **Import from file** and pick a `.txt` / `.csv` file.
+- Optional markers tell the AI which meaning you want:
+  - `to run` → verb
+  - `a book`, `an apple`, `the house` → noun
+  - `happy` (no marker) → most common part of speech
+- Click **Parse Words** to review the list (shown as chips). Remove any with the ×.
 
-5. Click "Save Settings" to persist your configuration
+### 3. Generate
 
-### 2. Input Tab
+- Click **Start Generation**.
+- Watch the progress: current word, stage, and how many cards are done.
+- The app generates definitions/examples and audio in parallel, then checks which words already exist in your deck.
 
-Add words for flashcard generation:
+### 4. Preview & Add
 
-1. Enter English words in the text area
-   - One word per line, or
-   - Comma-separated words
-2. Click "Parse Words" to process the list
-3. Review the parsed words (shown as chips)
-4. Remove individual words by clicking the × button if needed
+- Review the generated cards; click one to expand and see all fields or play the audio.
+- Cards already in the deck show an **"Already in deck"** badge and are skipped by default. Tick **"Add duplicates anyway"** if you want them too.
+- Remove unwanted cards with **Remove**.
+- Click **Add All to Anki**. The cards are sent to Anki in a single batch; you'll see how many were added.
 
-### 3. Generate Tab
+---
 
-Start the generation process:
+## Field mapping examples
 
-1. Review the settings summary
-2. Ensure all requirements are met (shown in validation errors if not)
-3. Click "Start Generation"
-4. Monitor progress:
-   - Current word being processed
-   - Current stage (Translation, Examples, Audio)
-   - Progress bar
-   - Completed cards count
+**Basic model** (fields: Front, Back)
+- Front → Word
+- Back → Definition
 
-The generation process:
-- **Translation Stage**: Generates Russian translation and IPA transcription
-- **Examples Stage**: Creates example sentences with translations
-- **Audio Stage**: Generates free audio pronunciation using Google Translate TTS
+**Custom vocabulary model** (Word, Definition, Transcription, Examples, Audio)
+- Word → Word
+- Definition → Definition
+- Transcription → Transcription
+- Examples → Example(s)
+- Audio → Word Audio
 
-### 4. Preview Tab
-
-Review and add cards to Anki:
-
-1. Review generated flashcards
-   - Click on a card to expand and see all details
-   - Play audio to hear pronunciation
-   - Check translations and examples
-2. Remove any unwanted cards using the "Remove" button
-3. Click "Add All to Anki" to import all cards
-4. Monitor the import progress
-
-## Field Mapping Examples
-
-### Example 1: Basic Model
-
-For Anki's default "Basic" model with fields: Front, Back
-
-- **Front** → Word
-- **Back** → Translation + Examples
-
-### Example 2: Custom Vocabulary Model
-
-For a custom model with fields: Word, Translation, Transcription, Examples, Audio
-
-- **Word** → Word
-- **Translation** → Translation
-- **Transcription** → Transcription
-- **Examples** → Examples
-- **Audio** → Audio
-
-### Example 3: Advanced Model
-
-For a model with: English, Russian, Pronunciation, Context, Sound
-
-- **English** → Word
-- **Russian** → Translation
-- **Pronunciation** → Transcription
-- **Context** → Examples
-- **Sound** → Audio
+---
 
 ## Troubleshooting
 
-### Anki Connection Issues
+**"Anki is not running or AnkiConnect addon is not installed"**
+- Make sure Anki is open.
+- Verify AnkiConnect is installed (Tools → Add-ons) and restart Anki.
+- Check nothing else is using port `8765`.
 
-**Problem**: "Anki is not running or AnkiConnect addon is not installed"
+**"API key not set" / "Failed to generate word meanings"**
+- Re-check the API key on the Setup tab (no extra spaces).
+- Make sure the selected **provider** and **model** match your key.
+- For *Custom*, confirm the Base URL is a valid OpenAI-compatible endpoint.
+- Ensure your account has quota/credits.
 
-**Solutions**:
-1. Make sure Anki is running
-2. Verify AnkiConnect is installed (Tools → Add-ons)
-3. Restart Anki after installing AnkiConnect
-4. Check if another application is using port 8765
+**Some words fail to generate**
+- Check your internet connection and provider rate limits.
+- Try fewer words at once.
+- Open the failing card to read the error message.
 
-### API Key Errors
+**Duplicates aren't detected**
+- Detection runs against the **selected deck** and matches the Anki field mapped to **Word**. Make sure a deck is chosen and a field is mapped to Word.
 
-**Problem**: "Invalid API key" or "Failed to generate..."
+---
 
-**Solutions**:
-1. Verify your Gemini API key is entered correctly (no extra spaces)
-2. Check the API key is active in [Google AI Studio](https://makersuite.google.com/app/apikey)
-3. Ensure you have API credits/quota available
-
-### Generation Errors
-
-**Problem**: Some words fail to generate
-
-**Solutions**:
-1. Check your internet connection
-2. Verify API rate limits haven't been exceeded
-3. Try generating fewer words at once
-4. Check the error message in the generated card for details
-
-## Project Structure
+## Project structure
 
 ```
 AnkiGenerator/
 ├── src/
-│   ├── main/                    # Electron Main Process
-│   │   ├── index.ts            # Entry point
-│   │   ├── preload.ts          # IPC bridge
-│   │   ├── services/           # Business logic
-│   │   └── ipc/                # IPC handlers
-│   ├── renderer/                # React UI
-│   │   ├── App.tsx             # Main app component
-│   │   ├── components/         # UI components
-│   │   ├── hooks/              # Custom React hooks
-│   │   └── store/              # Zustand state management
-│   └── shared/                 # Shared types
-├── dist/                        # Build output
+│   ├── main/                 # Electron main process
+│   │   ├── index.ts          # Entry point / window
+│   │   ├── preload.ts         # Secure IPC bridge
+│   │   ├── services/          # Business logic (AI, AnkiConnect, TTS, settings)
+│   │   └── ipc/               # IPC handlers
+│   ├── renderer/              # React UI
+│   │   ├── components/        # WordInput, Generation, Preview, Settings, …
+│   │   ├── hooks/             # useCardGeneration, useAddToAnki
+│   │   └── store/             # Zustand state
+│   └── shared/                # Shared types & word parser
+├── dist/                      # Build output
 └── package.json
 ```
 
-## Technology Stack
+---
 
-- **Electron**: Desktop application framework
-- **React**: UI framework
-- **TypeScript**: Type-safe JavaScript
-- **Zustand**: State management
-- **Webpack**: Module bundler
-- **Gemini API**: AI-powered translation and examples
-- **Google Translate TTS**: Free text-to-speech for audio
-- **AnkiConnect**: Anki integration
+## Tech stack
 
-## Development
+- **Electron** — desktop shell (main + preload + renderer, isolated IPC)
+- **React + TypeScript** — UI
+- **Zustand** — state management
+- **Webpack** — bundler
+- **openai SDK** — AI calls against any OpenAI-compatible provider
+- **Google Translate TTS** — free text-to-speech
+- **AnkiConnect** — Anki integration
 
-### Available Scripts
+---
 
-- `npm run build` - Build the application
-- `npm start` - Start the Electron app
-- `npm run dev` - Build and start in one command
-- `npm run package` - Create distributable packages
+## Available scripts
 
-### Development Tips
+- `npm run build` — build the app
+- `npm start` — launch the built app
+- `npm run dev` — build and launch in one go
+- `npm run package` — create a distributable build
 
-1. Use Chrome DevTools (opened automatically in development mode)
-2. Check the console for errors and logs
-3. Settings are stored in:
-   - Windows: `%APPDATA%/anki-generator-settings`
-   - macOS: `~/Library/Application Support/anki-generator-settings`
-   - Linux: `~/.config/anki-generator-settings`
+Settings are stored locally:
+- Windows: `%APPDATA%/anki-generator-settings`
+- macOS: `~/Library/Application Support/anki-generator-settings`
+- Linux: `~/.config/anki-generator-settings`
+
+---
 
 ## License
 
 MIT
-
-## Support
-
-For issues, questions, or feature requests, please open an issue on the project repository.

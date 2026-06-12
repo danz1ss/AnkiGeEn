@@ -26,3 +26,12 @@ Thumbs.db
 
 # Electron
 out/
+
+# Tooling / generated artifacts
+graphify-out/
+.understand-anything/
+tmp/
+
+# Temp debug scripts
+test_electron_api.js
+test_process.js

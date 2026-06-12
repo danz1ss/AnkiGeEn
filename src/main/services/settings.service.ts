@@ -3,6 +3,9 @@ import { AppSettings, DataSource } from '../../shared/types';
 
 interface SettingsSchema {
   geminiApiKey?: string;
+  aiProvider?: string;
+  aiModel?: string;
+  aiBaseUrl?: string;
   selectedDeck?: string;
   selectedModel?: string;
   exampleCount: number;
@@ -10,6 +13,8 @@ interface SettingsSchema {
 }
 
 const defaultSettings: SettingsSchema = {
+  aiProvider: 'proxyapi',
+  aiModel: 'gpt-4o-mini',
   exampleCount: 3,
   fieldMapping: {}
 };
@@ -35,6 +40,9 @@ class SettingsService {
   async getAll(): Promise<Partial<AppSettings>> {
     return {
       geminiApiKey: this.store.get('geminiApiKey'),
+      aiProvider: this.store.get('aiProvider', 'proxyapi'),
+      aiModel: this.store.get('aiModel', 'gpt-4o-mini'),
+      aiBaseUrl: this.store.get('aiBaseUrl'),
       selectedDeck: this.store.get('selectedDeck'),
       selectedModel: this.store.get('selectedModel'),
       exampleCount: this.store.get('exampleCount', 3),

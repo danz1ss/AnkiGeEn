@@ -1,20 +1,46 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useStore } from '../../store';
 import Button from '../common/Button';
 import './WordInput.css';
 
+// Split raw text into a clean word list (newlines, commas, semicolons)
+const parseText = (text: string): string[] =>
+  text
+    .split(/[\n,;]+/)
+    .map((w) => w.trim())
+    .filter((w) => w.length > 0);
+
 const WordInput: React.FC = () => {
   const [inputText, setInputText] = useState('');
   const { words, setWords } = useStore();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleParse = () => {
-    // Parse words by newlines and commas
-    const parsed = inputText
-      .split(/[\n,]+/)
-      .map((w) => w.trim())
-      .filter((w) => w.length > 0);
+    setWords(parseText(inputText));
+  };
 
-    setWords(parsed);
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = String(reader.result || '');
+      const combined = inputText ? `${inputText}\n${text}` : text;
+      setInputText(combined);
+      setWords(parseText(combined));
+    };
+    reader.onerror = () => {
+      console.error('Failed to read file:', reader.error);
+    };
+    reader.readAsText(file);
+
+    // Reset so selecting the same file again still triggers onChange
+    e.target.value = '';
   };
 
   const handleClear = () => {
@@ -26,7 +52,8 @@ const WordInput: React.FC = () => {
     <div className="word-input">
       <h2>Input Words</h2>
       <p className="description">
-        Enter English words to generate flashcards. Separate words by new lines or commas.
+        Enter words to generate flashcards. Separate them by new lines or commas,
+        or import a .txt/.csv file.
       </p>
 
       <div className="form-group">
@@ -43,9 +70,19 @@ const WordInput: React.FC = () => {
 
       <div className="button-group">
         <Button onClick={handleParse}>Parse Words</Button>
+        <Button onClick={handleImportClick} variant="secondary">
+          Import from file
+        </Button>
         <Button onClick={handleClear} variant="secondary">
           Clear
         </Button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".txt,.csv"
+          style={{ display: 'none' }}
+          onChange={handleFileChange}
+        />
       </div>
 
       {words.length > 0 && (

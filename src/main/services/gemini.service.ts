@@ -2,14 +2,23 @@ import OpenAI from 'openai'
 import { BatchWordResult, ParsedWord } from '../../shared/types'
 import { formatPartOfSpeech } from '../../shared/utils/wordParser'
 
+interface AIConfig {
+	apiKey: string
+	baseURL: string
+	model: string
+}
+
 class AIService {
 	private client: OpenAI | null = null
+	private model: string = 'gpt-4o-mini'
 
-	setApiKey(apiKey: string): void {
+	configure(config: AIConfig): void {
 		this.client = new OpenAI({
-			apiKey: apiKey,
-			baseURL: 'https://api.proxyapi.ru/openai/v1',
+			apiKey: config.apiKey,
+			// Empty baseURL falls back to the official OpenAI endpoint
+			baseURL: config.baseURL || undefined,
 		})
+		this.model = config.model || 'gpt-4o-mini'
 	}
 
 	private ensureInitialized(): void {
@@ -110,7 +119,7 @@ IMPORTANT:
 
 		try {
 			const completion = await this.client!.chat.completions.create({
-				model: 'gpt-4o-mini',
+				model: this.model,
 				messages: [{ role: 'user', content: prompt }],
 				temperature: 0.7,
 			})

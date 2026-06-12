@@ -4,12 +4,15 @@ import Input from '../common/Input';
 import Select from '../common/Select';
 import Button from '../common/Button';
 import FieldMapper from './FieldMapper';
-import { DataSource } from '../../../shared/types';
+import { AI_PROVIDERS } from '../../../shared/types';
 import './Settings.css';
 
 const Settings: React.FC = () => {
   const {
     geminiApiKey,
+    aiProvider,
+    aiModel,
+    aiBaseUrl,
     selectedDeck,
     selectedModel,
     exampleCount,
@@ -19,6 +22,9 @@ const Settings: React.FC = () => {
     availableFields,
     ankiConnected,
     setGeminiApiKey,
+    setAiProvider,
+    setAiModel,
+    setAiBaseUrl,
     setSelectedDeck,
     setSelectedModel,
     setExampleCount,
@@ -53,6 +59,20 @@ const Settings: React.FC = () => {
 
         setAvailableDecks(decks);
         setAvailableModels(models);
+
+        // Drop stale persisted selections that no longer exist in Anki,
+        // otherwise the dropdown shows "Select a deck..." while the store
+        // still holds a deleted deck name and addNotes fails with
+        // "deck was not found". Read fresh state to avoid a render-closure
+        // race with loadSettings (both run on mount).
+        const { selectedDeck: curDeck, selectedModel: curModel } =
+          useStore.getState();
+        if (curDeck && !decks.includes(curDeck)) {
+          setSelectedDeck('');
+        }
+        if (curModel && !models.includes(curModel)) {
+          setSelectedModel('');
+        }
       }
     } catch (error) {
       console.error('Failed to check Anki connection:', error);
@@ -73,6 +93,27 @@ const Settings: React.FC = () => {
       setSaveMessage(`Error: ${error.message}`);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const currentProvider =
+    AI_PROVIDERS.find((p) => p.id === aiProvider) || AI_PROVIDERS[0];
+  const isCustomProvider = aiProvider === 'custom';
+
+  const providerOptions = AI_PROVIDERS.map((p) => ({
+    value: p.id,
+    label: p.label
+  }));
+  const aiModelOptions = currentProvider.models.map((m) => ({
+    value: m,
+    label: m
+  }));
+
+  const handleProviderChange = (providerId: string) => {
+    setAiProvider(providerId);
+    const preset = AI_PROVIDERS.find((p) => p.id === providerId);
+    if (preset && preset.defaultModel) {
+      setAiModel(preset.defaultModel);
     }
   };
 
@@ -125,28 +166,63 @@ const Settings: React.FC = () => {
         )}
       </div>
 
-      {/* API Keys */}
+      {/* AI Provider */}
       <div className="settings-section">
-        <h3>API Key</h3>
+        <h3>AI Provider</h3>
+        <Select
+          label="Provider"
+          value={aiProvider}
+          onChange={(e) => handleProviderChange(e.target.value)}
+          options={providerOptions}
+        />
+
+        {isCustomProvider ? (
+          <>
+            <Input
+              label="Base URL (OpenAI-compatible endpoint)"
+              type="text"
+              value={aiBaseUrl}
+              onChange={(e) => setAiBaseUrl(e.target.value)}
+              placeholder="https://your-endpoint/v1"
+            />
+            <Input
+              label="Model"
+              type="text"
+              value={aiModel}
+              onChange={(e) => setAiModel(e.target.value)}
+              placeholder="model-name"
+            />
+          </>
+        ) : (
+          <Select
+            label="Model"
+            value={aiModel}
+            onChange={(e) => setAiModel(e.target.value)}
+            options={aiModelOptions}
+          />
+        )}
+
         <Input
-          label="ProxyAPI Key"
+          label="AI API Key"
           type="password"
           value={geminiApiKey}
           onChange={(e) => setGeminiApiKey(e.target.value)}
-          placeholder="Enter your ProxyAPI key"
+          placeholder="Enter the API key for the selected provider"
         />
-        <p className="help-text">
-          Get your ProxyAPI key from{' '}
-          <a
-            href="#"
-            onClick={(e) => {
-              e.preventDefault();
-              window.electronAPI.shell.openExternal('https://proxyapi.ru/cabinet/api');
-            }}
-          >
-            ProxyAPI Cabinet
-          </a>
-        </p>
+        {aiProvider === 'proxyapi' && (
+          <p className="help-text">
+            Get your ProxyAPI key from{' '}
+            <a
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                window.electronAPI.shell.openExternal('https://proxyapi.ru/cabinet/api');
+              }}
+            >
+              ProxyAPI Cabinet
+            </a>
+          </p>
+        )}
       </div>
 
       {/* Anki Settings */}

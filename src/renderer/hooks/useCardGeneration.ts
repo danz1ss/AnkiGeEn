@@ -1,6 +1,58 @@
 import { useStore } from '../store';
-import { GeneratedCard, GenerationStage, BatchWordResult, WordMeaningResponse, ParsedWord } from '../../shared/types';
+import { GeneratedCard, GenerationStage, BatchWordResult, WordMeaningResponse, ParsedWord, DataSource } from '../../shared/types';
 import { parseWords } from '../../shared/utils/wordParser';
+
+/**
+ * Marks generated cards whose word already exists in the selected deck.
+ * Uses AnkiConnect findNotes; falls back to a deck-wide text search when
+ * no Anki field is mapped to the Word data source.
+ */
+async function markDuplicatesInDeck(): Promise<void> {
+  const { selectedDeck, fieldMapping, generatedCards, setGeneratedCards } =
+    useStore.getState();
+
+  if (!selectedDeck || generatedCards.length === 0) {
+    return;
+  }
+
+  const wordFieldEntry = Object.entries(fieldMapping).find(
+    ([, ds]) => ds === DataSource.Word
+  );
+  const wordField = wordFieldEntry ? wordFieldEntry[0] : '';
+  const esc = (s: string) => s.replace(/["\\]/g, '\\$&');
+
+  const uniqueWords = Array.from(
+    new Set(
+      generatedCards.filter((c) => !c.error).map((c) => c.word.toLowerCase())
+    )
+  );
+
+  const duplicates = new Set<string>();
+  await Promise.all(
+    uniqueWords.map(async (word) => {
+      const query = wordField
+        ? `deck:"${esc(selectedDeck)}" "${esc(wordField)}:${esc(word)}"`
+        : `deck:"${esc(selectedDeck)}" "${esc(word)}"`;
+      try {
+        const ids = await window.electronAPI.anki.findNotes(query);
+        if (ids && ids.length > 0) {
+          duplicates.add(word);
+        }
+      } catch (error) {
+        console.error(`Duplicate check failed for "${word}":`, error);
+      }
+    })
+  );
+
+  if (duplicates.size > 0) {
+    setGeneratedCards(
+      generatedCards.map((c) => ({
+        ...c,
+        isDuplicate: duplicates.has(c.word.toLowerCase()),
+      }))
+    );
+  }
+}
 
 // Configuration
 const AI_BATCH_SIZE = 3;    // Words per AI request
@@ -61,6 +113,8 @@ export const useCardGeneration = () => {
 
     const totalWords = words.length;
     let completedWords = 0;
+    let cardCounter = 0;
+    const nextCardId = () => `card-${Date.now()}-${cardCounter++}`;
 
     // Parse all words to detect part of speech
     const parsedWords = parseWords(words);
@@ -147,6 +201,7 @@ export const useCardGeneration = () => {
       if (!meanings || meanings.length === 0) {
         // Error case - no meanings generated
         const errorCard: GeneratedCard = {
+          id: nextCardId(),
           word: pw.word, // Use clean word for card
           wordType: '',
           definition: '',
@@ -165,6 +220,7 @@ export const useCardGeneration = () => {
 
       meanings.forEach((meaning: WordMeaningResponse, index: number) => {
         const card: GeneratedCard = {
+          id: nextCardId(),
           word: pw.word, // Use clean word for card
           wordType: meaning.wordType,
           definition: meaning.definition,
@@ -181,6 +237,9 @@ export const useCardGeneration = () => {
       completedWords++;
       updateProgress(pw.original, GenerationStage.Complete);
     }
+
+    // Flag cards whose word already exists in the selected deck
+    await markDuplicatesInDeck();
 
     setIsGenerating(false);
 

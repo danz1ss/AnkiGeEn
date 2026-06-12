@@ -9,20 +9,23 @@ const Preview: React.FC = () => {
   const { generatedCards, removeGeneratedCard } = useStore();
   const { addAllToAnki, resetStatus, status, isAdding, addedCount, totalCount, error } = useAddToAnki();
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
+  const [includeDuplicates, setIncludeDuplicates] = useState(false);
 
-  const handleRemoveCard = (word: string) => {
-    removeGeneratedCard(word);
-    if (expandedCard === word) {
+  const duplicateCount = generatedCards.filter((c) => c.isDuplicate).length;
+
+  const handleRemoveCard = (id: string) => {
+    removeGeneratedCard(id);
+    if (expandedCard === id) {
       setExpandedCard(null);
     }
   };
 
-  const handleToggleCard = (word: string) => {
-    setExpandedCard(expandedCard === word ? null : word);
+  const handleToggleCard = (id: string) => {
+    setExpandedCard(expandedCard === id ? null : id);
   };
 
   const handleAddAllToAnki = async () => {
-    await addAllToAnki(generatedCards);
+    await addAllToAnki(generatedCards, includeDuplicates);
   };
 
   const getButtonText = () => {
@@ -66,6 +69,11 @@ const Preview: React.FC = () => {
           <div className="preview-summary">
             <span className="card-count">
               {generatedCards.length} card{generatedCards.length !== 1 ? 's' : ''} generated
+              {duplicateCount > 0 && (
+                <span className="duplicate-count">
+                  {' '}· {duplicateCount} already in deck
+                </span>
+              )}
             </span>
             <Button
               onClick={status === 'error' ? resetStatus : handleAddAllToAnki}
@@ -76,6 +84,17 @@ const Preview: React.FC = () => {
               {getButtonText()}
             </Button>
           </div>
+
+          {duplicateCount > 0 && (
+            <label className="duplicate-toggle">
+              <input
+                type="checkbox"
+                checked={includeDuplicates}
+                onChange={(e) => setIncludeDuplicates(e.target.checked)}
+              />
+              {' '}Add duplicates anyway ({duplicateCount})
+            </label>
+          )}
 
           {/* Progress/Error Messages */}
           {isAdding && (
@@ -99,19 +118,25 @@ const Preview: React.FC = () => {
           {/* Card List */}
           <div className="card-list">
             {generatedCards.map((card) => (
-              <div key={card.word} className="card-item">
-                <div className="card-header" onClick={() => handleToggleCard(card.word)}>
+              <div key={card.id} className="card-item">
+                <div className="card-header" onClick={() => handleToggleCard(card.id)}>
                   <div className="card-title">
                     <span className="card-word">{card.word}</span>
                     {card.transcription && (
                       <span className="card-transcription">{card.transcription}</span>
+                    )}
+                    {card.isDuplicate && (
+                      <span className="card-badge duplicate">Already in deck</span>
+                    )}
+                    {card.error && (
+                      <span className="card-badge error">Error</span>
                     )}
                   </div>
                   <div className="card-actions">
                     <Button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleRemoveCard(card.word);
+                        handleRemoveCard(card.id);
                       }}
                       variant="danger"
                       size="small"
@@ -119,12 +144,12 @@ const Preview: React.FC = () => {
                       Remove
                     </Button>
                     <span className="expand-icon">
-                      {expandedCard === card.word ? '▼' : '▶'}
+                      {expandedCard === card.id ? '▼' : '▶'}
                     </span>
                   </div>
                 </div>
 
-                {expandedCard === card.word && (
+                {expandedCard === card.id && (
                   <CardPreview card={card} />
                 )}
               </div>
